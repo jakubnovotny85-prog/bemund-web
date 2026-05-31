@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Montserrat:wght@200;300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --color-obsidian: #0A0A0A;
+  --color-graphite: #141414;
+  --color-slate: #252525;
+  --color-champagne: #C9A96E;
+  --color-champagne-light: #DFC18A;
+  --color-champagne-pale: #E8D5A8;
+  --color-ivory: #F5F2EC;
+  --color-success: #7AB89A;
+
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Montserrat', sans-serif;
+}
+
+:root {
+  --ivory-mid: rgba(245, 242, 236, 0.5);
+  --ivory-dim: rgba(245, 242, 236, 0.08);
+  --ivory-30: rgba(245, 242, 236, 0.3);
+  --border-color: rgba(201, 169, 110, 0.15);
+  --border-hover: rgba(201, 169, 110, 0.4);
+  --champagne-glow: rgba(201, 169, 110, 0.07);
+  --champagne-pale-a: rgba(201, 169, 110, 0.12);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: #0A0A0A;
+    color: #F5F2EC;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: rgba(201, 169, 110, 0.3);
+    color: #F5F2EC;
+  }
+}

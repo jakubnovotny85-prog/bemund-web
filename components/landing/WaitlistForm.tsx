@@ -2,68 +2,88 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { LogoSymbol } from '@/components/ui/Logo';
 import { FadeIn } from './FadeIn';
 
 export function WaitlistForm() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
+    if (!email || submitting) return;
+
+    setSubmitting(true);
+
+    // TODO: Supabase integration
+    // import { supabase } from '@/lib/supabase';
+    // await supabase.from('waitlist').insert({ email });
+
+    await new Promise((r) => setTimeout(r, 600));
     setSubmitted(true);
+    setSubmitting(false);
   }
 
   return (
-    <section className="border-b border-[rgba(201,169,110,0.15)] relative overflow-hidden">
+    <section id="waitlist" className="border-b border-[rgba(201,169,110,0.15)] relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(201,169,110,0.05)_0%,transparent_60%)] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 py-20 lg:py-28 relative">
-        <div className="max-w-lg mx-auto text-center">
+        <div className="max-w-xl mx-auto text-center">
           <FadeIn>
-            <LogoSymbol size={48} className="mx-auto mb-8 opacity-40" />
-          </FadeIn>
-
-          <FadeIn delay={0.1}>
-            <h2 className="font-display text-3xl lg:text-4xl font-light tracking-tight mb-4">
-              Be among the <em className="italic text-champagne">first.</em>
+            <h2 className="font-display text-4xl lg:text-5xl font-light tracking-tight mb-4">
+              Buď <em className="italic text-champagne">první.</em>
             </h2>
             <p className="text-sm leading-relaxed text-[rgba(245,242,236,0.5)] mb-10">
-              Join the waitlist and get early access to the Be Mund platform.
-              We&apos;ll notify you when we launch.
+              Beta program je otevřený pro umělce, galerie a sběratele.
+              Registrace zdarma.
             </p>
           </FadeIn>
 
-          <FadeIn delay={0.2}>
+          <FadeIn delay={0.1}>
             {!submitted ? (
-              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  required
-                  className="flex-1 bg-graphite border border-[rgba(201,169,110,0.15)] rounded-sm px-4 py-3.5 text-sm font-body font-light text-ivory outline-none focus:border-[rgba(201,169,110,0.4)] transition-colors placeholder:text-[rgba(245,242,236,0.25)]"
-                />
-                <Button type="submit" variant="primary" className="whitespace-nowrap">
-                  Join waitlist
-                </Button>
-              </form>
+              <div>
+                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 mb-3">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="vas@email.cz"
+                    required
+                    className="flex-1 bg-graphite border border-[rgba(201,169,110,0.15)] rounded-sm px-4 py-3.5 text-sm font-body font-light text-ivory outline-none focus:border-[rgba(201,169,110,0.4)] transition-colors placeholder:text-[rgba(245,242,236,0.25)]"
+                  />
+                  <Button type="submit" variant="primary" className="whitespace-nowrap" disabled={submitting}>
+                    {submitting ? 'Odesílám...' : 'Získat přístup'}
+                  </Button>
+                </form>
+                <p className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.2)] mb-8">
+                  Žádný spam. Pouze oznámení o spuštění.
+                </p>
+              </div>
             ) : (
-              <div className="flex items-center justify-center gap-3 py-4">
-                <div className="w-2 h-2 rounded-full bg-success" />
+              <div className="flex items-center justify-center gap-3 py-4 mb-8">
+                <div className="w-2.5 h-2.5 rounded-full bg-success" />
                 <span className="text-sm text-success tracking-[1px]">
-                  You&apos;re on the list. We&apos;ll be in touch.
+                  Přidáno! Ozveme se ti brzy.
                 </span>
               </div>
             )}
           </FadeIn>
 
-          <FadeIn delay={0.3}>
-            <p className="mt-6 text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.2)]">
-              No spam. Unsubscribe anytime.
-            </p>
+          <FadeIn delay={0.2}>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-[rgba(245,242,236,0.35)]">
+              <span className="flex items-center gap-1.5">
+                <span className="text-success">✓</span> Registrace zdarma
+              </span>
+              <span className="text-[rgba(201,169,110,0.2)]">&middot;</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-success">✓</span> Osobní onboarding
+              </span>
+              <span className="text-[rgba(201,169,110,0.2)]">&middot;</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-success">✓</span> Doživotní zvýhodněný tarif
+              </span>
+            </div>
           </FadeIn>
         </div>
       </div>

@@ -4,8 +4,8 @@ import { Footer } from '@/components/layout/Footer';
 import { VerifyForm } from '@/components/verify/VerifyForm';
 
 export const metadata: Metadata = {
-  title: 'Verify — Be Mund',
-  description: 'Publicly verify the authenticity and ownership of any Be Mund certified object. No account required.',
+  title: 'Ověřit objekt — Be Mund',
+  description: 'Veřejné ověření autenticity a vlastnictví jakéhokoliv Be Mund certifikovaného objektu. Bez registrace.',
 };
 
 export default function VerifyPage() {

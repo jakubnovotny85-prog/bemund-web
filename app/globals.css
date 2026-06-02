@@ -4,6 +4,7 @@
 @theme inline {
   --color-obsidian: #0A0A0A;
   --color-graphite: #141414;
+  --color-graphite-2: #1C1C1C;
   --color-slate: #252525;
   --color-champagne: #C9A96E;
   --color-champagne-light: #DFC18A;
@@ -20,7 +21,7 @@
   --ivory-dim: rgba(245, 242, 236, 0.08);
   --ivory-30: rgba(245, 242, 236, 0.3);
   --border-color: rgba(201, 169, 110, 0.15);
-  --border-hover: rgba(201, 169, 110, 0.4);
+  --border-hover: rgba(201, 169, 110, 0.45);
   --champagne-glow: rgba(201, 169, 110, 0.07);
   --champagne-pale-a: rgba(201, 169, 110, 0.12);
 }
@@ -42,5 +43,16 @@
   ::selection {
     background: rgba(201, 169, 110, 0.3);
     color: #F5F2EC;
+  }
+}
+
+@layer utilities {
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
   }
 }

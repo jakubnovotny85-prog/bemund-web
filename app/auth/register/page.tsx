@@ -72,6 +72,7 @@ export default function RegisterPage() {
 
       // 3. Redirect to dashboard
       router.push('/dashboard');
+      router.refresh();
     } catch {
       setError('Nastala neočekávaná chyba. Zkuste to znovu.');
     } finally {

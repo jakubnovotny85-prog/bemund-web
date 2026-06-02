@@ -23,8 +23,11 @@ export interface BeMundObject {
   edition_number: number;
   edition_total: number;
   year: number;
+  medium: string | null;
+  dimensions: string | null;
   images: string[];
   qr_code: string;
+  qr_url: string;
   metadata_ipfs: string;
   nft_policy_id: string;
   nft_asset_id: string;

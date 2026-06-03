@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { LogoSymbol } from '@/components/ui/Logo';
+import type { Session } from '@supabase/supabase-js';
 
 interface ClaimObject {
   id: string;
@@ -21,7 +22,7 @@ interface ClaimObject {
   issuers: { name: string; email: string } | null;
 }
 
-type PageState = 'loading' | 'not_found' | 'claim_form' | 'submitting' | 'success' | 'already_claimed';
+type PageState = 'loading' | 'not_found' | 'needs_auth' | 'claim_form' | 'submitting' | 'success' | 'already_claimed';
 
 export default function ClaimPage() {
   const params = useParams();
@@ -29,14 +30,15 @@ export default function ClaimPage() {
 
   const [state, setState] = useState<PageState>('loading');
   const [object, setObject] = useState<ClaimObject | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
 
   // Form
-  const [ownerName, setOwnerName] = useState('');
-  const [ownerEmail, setOwnerEmail] = useState('');
   const [price, setPrice] = useState('');
   const [error, setError] = useState('');
+  const [claimedName, setClaimedName] = useState('');
 
   const loadObject = useCallback(async () => {
+    // Load object
     const { data, error: fetchError } = await supabase
       .from('objects')
       .select('*, issuers(name, email)')
@@ -50,10 +52,19 @@ export default function ClaimPage() {
 
     setObject(data);
 
-    if (data.status === 'active') {
-      setState('claim_form');
-    } else {
+    if (data.status !== 'active') {
       setState('already_claimed');
+      return;
+    }
+
+    // Check auth
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    setSession(sess);
+
+    if (!sess) {
+      setState('needs_auth');
+    } else {
+      setState('claim_form');
     }
   }, [qrCode]);
 
@@ -65,8 +76,8 @@ export default function ClaimPage() {
     e.preventDefault();
     setError('');
 
-    if (!ownerName.trim() || !ownerEmail.trim()) {
-      setError('Vyplňte jméno a email.');
+    if (!session?.access_token) {
+      setState('needs_auth');
       return;
     }
 
@@ -75,11 +86,12 @@ export default function ClaimPage() {
     try {
       const res = await fetch('/api/claim', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           qr_code: qrCode,
-          owner_name: ownerName.trim(),
-          owner_email: ownerEmail.trim(),
           transfer_price: price ? Number(price) : null,
         }),
       });
@@ -89,6 +101,8 @@ export default function ClaimPage() {
       if (!res.ok) {
         if (data.error === 'already_claimed') {
           setState('already_claimed');
+        } else if (data.error === 'unauthorized') {
+          setState('needs_auth');
         } else {
           setError(data.error ?? 'Nastala chyba.');
           setState('claim_form');
@@ -96,10 +110,11 @@ export default function ClaimPage() {
         return;
       }
 
+      setClaimedName(data.owner_name ?? session.user.email ?? '');
       setState('success');
     } catch (err) {
-      console.error('Claim fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Chyba připojení k serveru.');
+      console.error('Claim error:', err);
+      setError(err instanceof Error ? err.message : 'Chyba připojení.');
       setState('claim_form');
     }
   }
@@ -107,15 +122,13 @@ export default function ClaimPage() {
   const inputClass =
     'w-full bg-graphite-2 border border-[rgba(201,169,110,0.2)] rounded-sm px-4 py-3 text-sm font-body font-light text-ivory outline-none transition-colors focus:border-[rgba(201,169,110,0.6)] placeholder:text-[rgba(245,242,236,0.25)]';
 
-  const labelClass =
-    'text-[8px] tracking-[3px] uppercase text-champagne font-medium mb-1.5 block';
-
   const authorName = object?.issuers?.name ?? 'Neznámý autor';
   const today = new Date().toLocaleDateString('cs-CZ', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
+  const claimRedirect = `/claim/${qrCode}`;
 
   // ─── LOADING ───
   if (state === 'loading') {
@@ -138,10 +151,7 @@ export default function ClaimPage() {
           <p className="text-sm text-[rgba(245,242,236,0.45)] mb-8">
             Tento certifikát nebyl nalezen. Ujistěte se že jste naskenovali správný kód.
           </p>
-          <Link
-            href="/"
-            className="text-[10px] tracking-[2px] uppercase text-champagne hover:text-champagne-light transition-colors font-body"
-          >
+          <Link href="/" className="text-[10px] tracking-[2px] uppercase text-champagne hover:text-champagne-light transition-colors font-body">
             &larr; Zpět na bemund.cz
           </Link>
         </div>
@@ -168,7 +178,6 @@ export default function ClaimPage() {
     return (
       <div className="min-h-screen bg-obsidian flex items-center justify-center px-4 py-16">
         <div className="max-w-[480px] w-full text-center">
-          {/* Green check */}
           <div className="w-20 h-20 mx-auto mb-8 rounded-full border-2 border-success bg-[rgba(122,184,154,0.1)] flex items-center justify-center">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7AB89A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 12 10 16 18 8" />
@@ -176,70 +185,46 @@ export default function ClaimPage() {
           </div>
 
           <h1 className="font-display text-3xl font-light tracking-tight mb-2">
-            Gratulujeme, {ownerName}!
+            Gratulujeme!
           </h1>
           <p className="text-sm text-[rgba(245,242,236,0.5)] mb-10">
-            Jste ověřený majitel.
+            Jste ověřený majitel díla.
           </p>
 
-          {/* Certificate card */}
           <div className="bg-graphite border border-[rgba(201,169,110,0.4)] rounded-sm p-6 text-left relative overflow-hidden mb-8">
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-champagne" />
-
             <div className="flex items-center gap-2 mb-5">
               <LogoSymbol size={16} />
               <span className="text-[7px] tracking-[3px] uppercase text-champagne font-medium">
                 Certificate of Ownership
               </span>
             </div>
-
             <div className="w-full h-px bg-[rgba(201,169,110,0.15)] mb-4" />
-
-            <div className="flex flex-col gap-2.5">
-              <div className="flex justify-between py-1 border-b border-[rgba(201,169,110,0.08)]">
-                <span className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.35)]">Dílo</span>
-                <span className="text-[11px] text-ivory">{object.title}</span>
+            {[
+              ['Dílo', object.title],
+              ['Autor', authorName],
+              ['Edice', `Kus č. ${object.edition_number} z ${object.edition_total}`],
+              ['Majitel', claimedName],
+              ['Datum', today],
+              ['ID', object.qr_code],
+            ].map(([label, value]) => (
+              <div key={label} className="flex justify-between py-1.5 border-b border-[rgba(201,169,110,0.08)]">
+                <span className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.35)]">{label}</span>
+                <span className="text-[11px] text-ivory">{value}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-[rgba(201,169,110,0.08)]">
-                <span className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.35)]">Autor</span>
-                <span className="text-[11px] text-ivory">{authorName}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-[rgba(201,169,110,0.08)]">
-                <span className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.35)]">Edice</span>
-                <span className="text-[11px] text-ivory">#{object.edition_number} z {object.edition_total}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-[rgba(201,169,110,0.08)]">
-                <span className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.35)]">Majitel</span>
-                <span className="text-[11px] text-champagne">{ownerName}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-[rgba(201,169,110,0.08)]">
-                <span className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.35)]">Datum</span>
-                <span className="text-[11px] text-ivory">{today}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-[rgba(201,169,110,0.08)]">
-                <span className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.35)]">ID</span>
-                <span className="text-[11px] font-mono text-[rgba(245,242,236,0.5)]">{object.qr_code}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.35)]">Status</span>
-                <span className="text-[11px] text-success">✓ Ověřeno</span>
-              </div>
+            ))}
+            <div className="flex justify-between py-1.5">
+              <span className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.35)]">Status</span>
+              <span className="text-[11px] text-success">✓ Ověřeno</span>
             </div>
           </div>
 
-          {/* Buttons */}
           <div className="flex flex-col gap-3">
-            <Link
-              href="/verify"
-              className="w-full py-3.5 bg-champagne text-obsidian font-semibold text-[10px] tracking-[3px] uppercase rounded-sm text-center transition-colors hover:bg-champagne-light font-body block"
-            >
-              Ověřit certifikát
+            <Link href="/verify" className="w-full py-3.5 bg-champagne text-obsidian font-semibold text-[10px] tracking-[3px] uppercase rounded-sm text-center transition-colors hover:bg-champagne-light font-body block">
+              Ověřit certifikát &rarr;
             </Link>
-            <Link
-              href="/"
-              className="w-full py-3 bg-transparent border border-[rgba(201,169,110,0.2)] text-[rgba(245,242,236,0.5)] text-[10px] tracking-[2px] uppercase rounded-sm text-center transition-colors hover:border-champagne hover:text-champagne font-body block"
-            >
-              &larr; Zpět na bemund.cz
+            <Link href="/dashboard" className="w-full py-3 bg-transparent border border-[rgba(201,169,110,0.2)] text-[rgba(245,242,236,0.5)] text-[10px] tracking-[2px] uppercase rounded-sm text-center transition-colors hover:border-champagne hover:text-champagne font-body block">
+              Přejít do Vaultu &rarr;
             </Link>
           </div>
         </div>
@@ -266,16 +251,10 @@ export default function ClaimPage() {
             Chcete ověřit autenticitu tohoto díla?
           </p>
           <div className="flex flex-col gap-3">
-            <Link
-              href="/verify"
-              className="w-full py-3.5 bg-champagne text-obsidian font-semibold text-[10px] tracking-[3px] uppercase rounded-sm text-center transition-colors hover:bg-champagne-light font-body block"
-            >
+            <Link href="/verify" className="w-full py-3.5 bg-champagne text-obsidian font-semibold text-[10px] tracking-[3px] uppercase rounded-sm text-center transition-colors hover:bg-champagne-light font-body block">
               Ověřit objekt
             </Link>
-            <Link
-              href="/"
-              className="text-[10px] tracking-[2px] uppercase text-[rgba(245,242,236,0.4)] hover:text-champagne transition-colors font-body"
-            >
+            <Link href="/" className="text-[10px] tracking-[2px] uppercase text-[rgba(245,242,236,0.4)] hover:text-champagne transition-colors font-body">
               &larr; Zpět na bemund.cz
             </Link>
           </div>
@@ -284,54 +263,76 @@ export default function ClaimPage() {
     );
   }
 
-  // ─── CLAIM FORM ───
   if (!object) return null;
 
+  // ─── Object info (shared between needs_auth and claim_form) ───
+  const objectCard = (
+    <div className="bg-graphite border border-[rgba(201,169,110,0.2)] rounded-sm p-8 mb-6 relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-champagne via-champagne-light to-transparent" />
+      <div className="flex items-center gap-2 mb-6">
+        <LogoSymbol size={18} />
+        <span className="text-[7px] tracking-[3px] uppercase text-champagne font-medium">
+          Certificate of Ownership
+        </span>
+      </div>
+      <h2 className="font-display text-[28px] font-light tracking-tight text-ivory mb-1">
+        {object.title}
+      </h2>
+      <p className="text-sm text-champagne italic mb-4 font-display">{authorName}</p>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[rgba(245,242,236,0.4)] mb-3">
+        <span>{object.category}</span>
+        <span>&middot;</span>
+        <span>{object.year}</span>
+        {object.medium && <><span>&middot;</span><span>{object.medium}</span></>}
+        {object.dimensions && <><span>&middot;</span><span>{object.dimensions}</span></>}
+      </div>
+      <p className="text-[11px] text-[rgba(245,242,236,0.35)]">
+        Kus č. {object.edition_number} z {object.edition_total}
+      </p>
+    </div>
+  );
+
+  // ─── NEEDS AUTH ───
+  if (state === 'needs_auth') {
+    return (
+      <div className="min-h-screen bg-obsidian flex items-center justify-center px-4 py-16">
+        <div className="max-w-[480px] w-full">
+          {objectCard}
+
+          <div className="bg-graphite border border-[rgba(201,169,110,0.2)] rounded-sm p-8 text-center">
+            <h3 className="font-display text-xl font-light tracking-tight text-ivory mb-2">
+              Pro převzetí vlastnictví se musíte přihlásit
+            </h3>
+            <p className="text-[11px] text-[rgba(245,242,236,0.4)] mb-8">
+              Účet chrání váš certifikát. Bez účtu nemůžete prokázat vlastnictví při přeprodeji.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <Link
+                href={`/auth/login?redirect=${encodeURIComponent(claimRedirect)}`}
+                className="w-full py-3.5 bg-champagne text-obsidian font-semibold text-[10px] tracking-[3px] uppercase rounded-sm text-center transition-colors hover:bg-champagne-light font-body block"
+              >
+                Přihlásit se
+              </Link>
+              <Link
+                href={`/auth/register?redirect=${encodeURIComponent(claimRedirect)}`}
+                className="w-full py-3 bg-transparent border border-[rgba(201,169,110,0.3)] text-[rgba(245,242,236,0.6)] text-[10px] tracking-[2px] uppercase rounded-sm text-center transition-colors hover:border-champagne hover:text-champagne font-body block"
+              >
+                Vytvořit účet
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── CLAIM FORM (authenticated) ───
   return (
     <div className="min-h-screen bg-obsidian flex items-center justify-center px-4 py-16">
       <div className="max-w-[480px] w-full">
-        {/* Object info card */}
-        <div className="bg-graphite border border-[rgba(201,169,110,0.2)] rounded-sm p-8 mb-6 relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-champagne via-champagne-light to-transparent" />
+        {objectCard}
 
-          <div className="flex items-center gap-2 mb-6">
-            <LogoSymbol size={18} />
-            <span className="text-[7px] tracking-[3px] uppercase text-champagne font-medium">
-              Certificate of Ownership
-            </span>
-          </div>
-
-          <h2 className="font-display text-[28px] font-light tracking-tight text-ivory mb-1">
-            {object.title}
-          </h2>
-          <p className="text-sm text-champagne italic mb-4 font-display">
-            {authorName}
-          </p>
-
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[rgba(245,242,236,0.4)] mb-3">
-            <span>{object.category}</span>
-            <span>&middot;</span>
-            <span>{object.year}</span>
-            {object.medium && (
-              <>
-                <span>&middot;</span>
-                <span>{object.medium}</span>
-              </>
-            )}
-            {object.dimensions && (
-              <>
-                <span>&middot;</span>
-                <span>{object.dimensions}</span>
-              </>
-            )}
-          </div>
-
-          <p className="text-[11px] text-[rgba(245,242,236,0.35)]">
-            Kus č. {object.edition_number} z {object.edition_total}
-          </p>
-        </div>
-
-        {/* Claim form */}
         <div className="bg-graphite border border-[rgba(201,169,110,0.2)] rounded-sm p-8">
           <div className="text-center mb-6">
             <p className="text-lg mb-1">🎉</p>
@@ -339,37 +340,21 @@ export default function ClaimPage() {
               Gratulujeme k nákupu!
             </h3>
             <p className="text-[11px] text-[rgba(245,242,236,0.45)]">
-              Zadejte své údaje pro převzetí digitálního certifikátu vlastnictví.
+              Potvrďte převzetí digitálního certifikátu vlastnictví.
             </p>
+          </div>
+
+          {/* Logged in user info */}
+          <div className="flex items-center gap-2 p-3 mb-5 bg-[rgba(201,169,110,0.06)] border border-[rgba(201,169,110,0.12)] rounded-sm">
+            <div className="w-1.5 h-1.5 rounded-full bg-success" />
+            <span className="text-[11px] text-[rgba(245,242,236,0.5)]">
+              Přihlášen jako: <span className="text-ivory">{session?.user.email}</span>
+            </span>
           </div>
 
           <form onSubmit={handleClaim} className="flex flex-col gap-5">
             <div>
-              <label className={labelClass}>Vaše jméno *</label>
-              <input
-                type="text"
-                value={ownerName}
-                onChange={(e) => setOwnerName(e.target.value)}
-                placeholder="Jan Novák"
-                required
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Váš email *</label>
-              <input
-                type="email"
-                value={ownerEmail}
-                onChange={(e) => setOwnerEmail(e.target.value)}
-                placeholder="jan@email.cz"
-                required
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>
+              <label className="text-[8px] tracking-[3px] uppercase text-champagne font-medium mb-1.5 block">
                 Cena pořízení
                 <span className="ml-2 text-[rgba(245,242,236,0.3)] normal-case tracking-normal font-light">
                   — nepovinné, v Kč

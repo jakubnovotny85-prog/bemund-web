@@ -207,7 +207,7 @@ export default function ObjectDetailPage() {
             href="/dashboard"
             className="text-[10px] tracking-[2px] uppercase text-[rgba(245,242,236,0.4)] hover:text-champagne transition-colors font-body"
           >
-            &larr; Zpět na přehled dílel
+            &larr; Zpět na přehled díla
           </Link>
         </div>
       </div>

@@ -13,32 +13,48 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [objects, setObjects] = useState<BeMundObject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function load() {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
+      // 1. Get session
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.user) {
         router.push('/auth/login');
         return;
       }
-      setUser(userData.user);
 
-      // Get issuer for this user
-      const { data: issuer } = await supabase
+      setUser(session.user);
+      const userId = session.user.id;
+
+      // 2. Find issuer for this user
+      const { data: issuer, error: issuerError } = await supabase
         .from('issuers')
         .select('id')
-        .eq('user_id', userData.user.id)
+        .eq('user_id', userId)
         .single();
 
+      if (issuerError) {
+        console.log('No issuer found for user, showing empty state');
+        setLoading(false);
+        return;
+      }
+
       if (issuer) {
-        // Load objects for this issuer
-        const { data: objs } = await supabase
+        // 3. Load objects for this issuer
+        const { data: objs, error: objsError } = await supabase
           .from('objects')
           .select('*')
           .eq('issuer_id', issuer.id)
           .order('created_at', { ascending: false });
 
-        if (objs) setObjects(objs);
+        if (objsError) {
+          console.error('Error loading objects:', objsError);
+          setError('Chyba při načítání děl.');
+        } else if (objs) {
+          setObjects(objs);
+        }
       }
 
       setLoading(false);
@@ -114,6 +130,10 @@ export default function DashboardPage() {
           </Link>
         </div>
 
+        {error && (
+          <p className="text-[#E07070] text-sm mb-6">{error}</p>
+        )}
+
         {/* Objects list */}
         {objects.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -140,9 +160,11 @@ export default function DashboardPage() {
                   <span className="text-[8px] tracking-[2px] uppercase text-champagne font-medium">
                     {obj.category}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-[8px] tracking-[1px] uppercase text-success">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[rgba(122,184,154,0.1)] rounded-sm">
                     <span className="w-1 h-1 rounded-full bg-success" />
-                    {obj.status}
+                    <span className="text-[7px] tracking-[1.5px] uppercase text-success font-medium">
+                      Aktivní
+                    </span>
                   </span>
                 </div>
 
@@ -151,12 +173,17 @@ export default function DashboardPage() {
                 </h3>
 
                 <p className="text-[11px] text-[rgba(245,242,236,0.35)] mb-3">
-                  Edice #{String(obj.edition_number).padStart(3, '0')} / {String(obj.edition_total).padStart(3, '0')}
+                  Kus č. {obj.edition_number} z {obj.edition_total} &middot; {obj.year}
                 </p>
 
-                <p className="text-[9px] font-mono text-[rgba(245,242,236,0.25)] tracking-wider">
-                  {obj.qr_code}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[9px] font-mono text-[rgba(245,242,236,0.25)] tracking-wider">
+                    {obj.qr_code}
+                  </p>
+                  <span className="text-[8px] tracking-[2px] uppercase text-champagne opacity-0 group-hover:opacity-100 transition-opacity">
+                    Zobrazit QR &rarr;
+                  </span>
+                </div>
               </Link>
             ))}
           </div>

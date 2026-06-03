@@ -1,13 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { LogoSymbol } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/Button';
+import { supabase } from '@/lib/supabase';
 import { NAV_LINKS } from '@/lib/constants';
 
 export function Navbar() {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+    }
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setMenuOpen(false);
+    router.push('/');
+    router.refresh();
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[rgba(10,10,10,0.92)] backdrop-blur-md border-b border-[rgba(201,169,110,0.15)]">
@@ -31,12 +56,35 @@ export function Navbar() {
           ))}
         </div>
 
-        <div className="hidden md:block">
-          <Link href="#waitlist">
-            <Button variant="primary" className="px-5 py-2.5 text-[9px]">
-              Získat přístup
-            </Button>
-          </Link>
+        <div className="hidden md:flex items-center gap-3">
+          {isLoggedIn ? (
+            <>
+              <Link href="/dashboard">
+                <Button variant="primary" className="px-5 py-2.5 text-[9px]">
+                  Dashboard &rarr;
+                </Button>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-[9px] tracking-[2px] uppercase text-[rgba(245,242,236,0.35)] hover:text-champagne transition-colors font-body cursor-pointer px-3 py-2.5"
+              >
+                Odhlásit
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/auth/login">
+                <Button variant="outline" className="px-4 py-2.5 text-[9px]">
+                  Přihlásit se
+                </Button>
+              </Link>
+              <Link href="#waitlist">
+                <Button variant="primary" className="px-5 py-2.5 text-[9px]">
+                  Získat přístup
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -63,11 +111,34 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-          <Link href="#waitlist" onClick={() => setMenuOpen(false)}>
-            <Button variant="primary" className="mt-2 w-full">
-              Získat přístup
-            </Button>
-          </Link>
+          {isLoggedIn ? (
+            <>
+              <Link href="/dashboard" onClick={() => setMenuOpen(false)}>
+                <Button variant="primary" className="mt-2 w-full">
+                  Dashboard &rarr;
+                </Button>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-[10px] tracking-[3px] uppercase text-[rgba(245,242,236,0.4)] hover:text-champagne transition-colors font-body py-1 text-left"
+              >
+                Odhlásit se
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/auth/login" onClick={() => setMenuOpen(false)}>
+                <Button variant="outline" className="mt-2 w-full">
+                  Přihlásit se
+                </Button>
+              </Link>
+              <Link href="#waitlist" onClick={() => setMenuOpen(false)}>
+                <Button variant="primary" className="w-full">
+                  Získat přístup
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

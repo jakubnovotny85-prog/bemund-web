@@ -2,7 +2,7 @@ export type IssuerType = 'artist' | 'gallery' | 'club' | 'brand';
 
 export type ObjectCategory = 'art' | 'sports' | 'collectible' | 'luxury' | 'other';
 
-export type ObjectStatus = 'draft' | 'active' | 'transferred';
+export type ObjectStatus = 'draft' | 'active' | 'claimed' | 'transferred';
 
 export interface Issuer {
   id: string;

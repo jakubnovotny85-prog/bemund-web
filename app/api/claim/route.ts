@@ -8,22 +8,36 @@ interface ClaimBody {
 }
 
 export async function POST(request: Request) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  // Debug: check env vars
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  console.log('Claim API - SUPABASE_URL exists:', !!url);
+  console.log('Claim API - SERVICE_ROLE_KEY exists:', !!key);
+
+  if (!url || !key) {
+    console.error('Missing env vars:', { url: !!url, key: !!key });
+    return Response.json(
+      { error: 'Server misconfigured: missing Supabase credentials' },
+      { status: 500 }
+    );
+  }
+
+  const supabase = createClient(url, key);
 
   let body: ClaimBody;
   try {
     body = await request.json();
-  } catch {
-    return Response.json({ error: 'invalid_body' }, { status: 400 });
+  } catch (e) {
+    console.error('JSON parse error:', e);
+    return Response.json({ error: 'Neplatné tělo požadavku' }, { status: 400 });
   }
 
   const { qr_code, owner_name, owner_email, transfer_price } = body;
+  console.log('Claim request:', { qr_code, owner_name, owner_email });
 
   if (!qr_code || !owner_name || !owner_email) {
-    return Response.json({ error: 'missing_fields' }, { status: 400 });
+    return Response.json({ error: 'Vyplňte všechna povinná pole' }, { status: 400 });
   }
 
   // 1. Find object by qr_code
@@ -33,9 +47,16 @@ export async function POST(request: Request) {
     .eq('qr_code', qr_code)
     .single();
 
-  if (objError || !object) {
-    return Response.json({ error: 'not_found' }, { status: 404 });
+  if (objError) {
+    console.error('Object lookup error:', objError);
+    return Response.json({ error: `Objekt nenalezen: ${objError.message}` }, { status: 404 });
   }
+
+  if (!object) {
+    return Response.json({ error: 'Objekt s tímto QR kódem neexistuje' }, { status: 404 });
+  }
+
+  console.log('Found object:', { id: object.id, status: object.status, title: object.title });
 
   if (object.status !== 'active') {
     return Response.json({ error: 'already_claimed' }, { status: 409 });
@@ -53,14 +74,24 @@ export async function POST(request: Request) {
     });
 
   if (ownershipError) {
-    return Response.json({ error: ownershipError.message }, { status: 500 });
+    console.error('Ownership insert error:', ownershipError);
+    return Response.json(
+      { error: `Chyba při zápisu vlastnictví: ${ownershipError.message}` },
+      { status: 500 }
+    );
   }
 
   // 3. Update object status
-  await supabase
+  const { error: updateError } = await supabase
     .from('objects')
     .update({ status: 'claimed' })
     .eq('id', object.id);
 
+  if (updateError) {
+    console.error('Object update error:', updateError);
+    // Ownership was created, so we still return success
+  }
+
+  console.log('Claim success for:', qr_code);
   return Response.json({ success: true });
 }

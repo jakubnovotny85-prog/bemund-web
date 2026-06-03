@@ -97,8 +97,9 @@ export default function ClaimPage() {
       }
 
       setState('success');
-    } catch {
-      setError('Nastala neočekávaná chyba.');
+    } catch (err) {
+      console.error('Claim fetch error:', err);
+      setError(err instanceof Error ? err.message : 'Chyba připojení k serveru.');
       setState('claim_form');
     }
   }

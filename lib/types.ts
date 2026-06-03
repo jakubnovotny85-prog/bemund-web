@@ -25,12 +25,9 @@ export interface BeMundObject {
   year: number;
   medium: string | null;
   dimensions: string | null;
-  images: string[];
+  image_url: string | null;
   qr_code: string;
   qr_url: string;
-  metadata_ipfs: string;
-  nft_policy_id: string;
-  nft_asset_id: string;
   royalty_percent: number;
   status: ObjectStatus;
   issuer?: Issuer;

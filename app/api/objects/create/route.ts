@@ -65,10 +65,6 @@ export async function POST(request: Request) {
       qr_code,
       qr_url,
       status: 'active',
-      images: [],
-      metadata_ipfs: '',
-      nft_policy_id: '',
-      nft_asset_id: '',
     })
     .select()
     .single();

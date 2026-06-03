@@ -11,7 +11,6 @@ interface CreateObjectBody {
   edition_number: number;
   edition_total: number;
   royalty_percent: number;
-  issuer_id: string;
 }
 
 export async function POST(request: Request) {
@@ -20,6 +19,52 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // 1. Get user from Authorization header
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader?.replace('Bearer ', '');
+
+  if (!token) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+  if (userError || !user) {
+    return Response.json({ error: 'Invalid token' }, { status: 401 });
+  }
+
+  const userId = user.id;
+  const userEmail = user.email ?? '';
+
+  // 2. Find or create issuer
+  const { data: existingIssuer } = await supabase
+    .from('issuers')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+
+  let issuerId = existingIssuer?.id;
+
+  if (!issuerId) {
+    const { data: newIssuer, error: issuerError } = await supabase
+      .from('issuers')
+      .insert({
+        user_id: userId,
+        name: userEmail,
+        email: userEmail,
+        type: 'artist',
+      })
+      .select('id')
+      .single();
+
+    if (issuerError || !newIssuer) {
+      return Response.json({ error: 'Failed to create issuer: ' + (issuerError?.message ?? 'unknown') }, { status: 500 });
+    }
+
+    issuerId = newIssuer.id;
+  }
+
+  // 3. Parse body
   let body: CreateObjectBody;
   try {
     body = await request.json();
@@ -37,22 +82,21 @@ export async function POST(request: Request) {
     edition_number,
     edition_total,
     royalty_percent,
-    issuer_id,
   } = body;
 
-  if (!title || !issuer_id) {
-    return Response.json({ error: 'Title and issuer_id are required' }, { status: 400 });
+  if (!title) {
+    return Response.json({ error: 'Title is required' }, { status: 400 });
   }
 
-  // Generate unique QR code
+  // 4. Generate unique QR code
   const qr_code = generateQRId();
   const qr_url = getClaimUrl(qr_code);
 
-  // Save to database
+  // 5. Save to database
   const { data, error } = await supabase
     .from('objects')
     .insert({
-      issuer_id,
+      issuer_id: issuerId,
       title,
       description: description || null,
       category,

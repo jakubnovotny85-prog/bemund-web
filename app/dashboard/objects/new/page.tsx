@@ -71,9 +71,20 @@ export default function NewObjectPage() {
     setLoading(true);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        setError('Session vypršela. Přihlaste se znovu.');
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch('/api/objects/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
@@ -84,7 +95,6 @@ export default function NewObjectPage() {
           edition_number: editionNumber,
           edition_total: editionTotal,
           royalty_percent: royaltyPercent,
-          issuer_id: issuerId,
         }),
       });
 

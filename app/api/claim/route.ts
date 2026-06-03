@@ -1,21 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-interface ClaimBody {
-  qr_code: string;
-  transfer_price: number | null;
-}
-
 export async function POST(request: Request) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !key) {
-    return Response.json({ error: 'Server misconfigured' }, { status: 500 });
-  }
-
-  const supabase = createClient(url, key);
-
-  // 1. Authenticate user from token
   const authHeader = request.headers.get('Authorization');
   const token = authHeader?.replace('Bearer ', '');
 
@@ -23,17 +8,26 @@ export async function POST(request: Request) {
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+  // Use anon key with user's auth token — no service role key needed
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    }
+  );
 
-  if (userError || !user) {
+  // Verify user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const ownerName = (user.user_metadata?.name as string) ?? user.email ?? 'Unknown';
-  const ownerEmail = user.email ?? '';
-
-  // 2. Parse body
-  let body: ClaimBody;
+  // Parse body
+  let body: { qr_code: string; transfer_price: number | null };
   try {
     body = await request.json();
   } catch {
@@ -46,7 +40,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'QR kód je povinný' }, { status: 400 });
   }
 
-  // 3. Find object
+  // Find object
   const { data: object, error: objError } = await supabase
     .from('objects')
     .select('*')
@@ -54,6 +48,7 @@ export async function POST(request: Request) {
     .single();
 
   if (objError || !object) {
+    console.error('Object lookup error:', objError);
     return Response.json({ error: 'Objekt s tímto QR kódem neexistuje' }, { status: 404 });
   }
 
@@ -61,24 +56,24 @@ export async function POST(request: Request) {
     return Response.json({ error: 'already_claimed' }, { status: 409 });
   }
 
-  // 4. Create ownership record
+  // Create ownership record
   const { error: ownershipError } = await supabase
     .from('ownerships')
     .insert({
       object_id: object.id,
-      owner_name: ownerName,
-      owner_email: ownerEmail,
+      owner_name: (user.user_metadata?.name as string) ?? user.email ?? 'Unknown',
+      owner_email: user.email,
       owner_user_id: user.id,
       transfer_price: transfer_price || null,
       is_current: true,
     });
 
   if (ownershipError) {
-    console.error('Ownership insert error:', ownershipError);
-    return Response.json({ error: `Chyba při zápisu: ${ownershipError.message}` }, { status: 500 });
+    console.error('Ownership error:', ownershipError);
+    return Response.json({ error: ownershipError.message }, { status: 500 });
   }
 
-  // 5. Update object status
+  // Update object status
   await supabase
     .from('objects')
     .update({ status: 'claimed' })
@@ -86,7 +81,7 @@ export async function POST(request: Request) {
 
   return Response.json({
     success: true,
-    owner_name: ownerName,
-    owner_email: ownerEmail,
+    owner_name: (user.user_metadata?.name as string) ?? user.email,
+    owner_email: user.email,
   });
 }

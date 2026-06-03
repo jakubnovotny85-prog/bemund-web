@@ -14,11 +14,6 @@ interface CreateObjectBody {
 }
 
 export async function POST(request: Request) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
   // 1. Get user from Authorization header
   const authHeader = request.headers.get('Authorization');
   const token = authHeader?.replace('Bearer ', '');
@@ -27,7 +22,18 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+  // Use anon key with user's auth token
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    }
+  );
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError || !user) {
     return Response.json({ error: 'Invalid token' }, { status: 401 });

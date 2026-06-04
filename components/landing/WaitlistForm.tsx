@@ -15,11 +15,21 @@ export function WaitlistForm() {
 
     setSubmitting(true);
 
-    // TODO: Supabase integration
-    // import { supabase } from '@/lib/supabase';
-    // await supabase.from('waitlist').insert({ email });
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
 
-    await new Promise((r) => setTimeout(r, 600));
+      if (!res.ok) {
+        const data = await res.json();
+        console.error('Waitlist error:', data.error);
+      }
+    } catch (err) {
+      console.error('Waitlist fetch error:', err);
+    }
+
     setSubmitted(true);
     setSubmitting(false);
   }

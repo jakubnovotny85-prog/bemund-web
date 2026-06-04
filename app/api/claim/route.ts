@@ -107,7 +107,7 @@ export async function POST(request: Request) {
       const resend = new Resend(process.env.RESEND_API_KEY);
 
       const { data: emailData, error: emailError } = await resend.emails.send({
-        from: 'Be Mund <onboarding@resend.dev>',
+        from: 'Be Mund <certifikat@bemund.cz>',
         to: ownerEmail,
         subject: `Certifikát vlastnictví — ${object.title}`,
         html: `<!DOCTYPE html>

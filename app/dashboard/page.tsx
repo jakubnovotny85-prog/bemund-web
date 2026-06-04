@@ -166,7 +166,7 @@ export default function DashboardPage() {
               {ownedItems.map((item) => (
                 <Link
                   key={item.id}
-                  href={`/claim/${item.objects.qr_code}`}
+                  href={`/dashboard/collection/${item.objects.qr_code}`}
                   className="group bg-graphite border border-[rgba(201,169,110,0.12)] rounded-sm p-6 transition-all duration-200 hover:-translate-y-1 hover:border-[rgba(201,169,110,0.4)]"
                 >
                   <div className="flex items-center justify-between mb-3">

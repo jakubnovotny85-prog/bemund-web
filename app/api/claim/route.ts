@@ -2,6 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
 export async function POST(request: Request) {
+  console.log('=== CLAIM API CALLED ===');
+  console.log('RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
+  console.log('RESEND_API_KEY prefix:', process.env.RESEND_API_KEY?.substring(0, 8));
+
   const authHeader = request.headers.get('Authorization');
   const token = authHeader?.replace('Bearer ', '');
 
@@ -97,11 +101,12 @@ export async function POST(request: Request) {
   });
 
   // Send certificate email (don't block claim if email fails)
+  console.log('=== SENDING EMAIL TO:', ownerEmail);
   try {
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
 
-      await resend.emails.send({
+      const { data: emailData, error: emailError } = await resend.emails.send({
         from: 'Be Mund <onboarding@resend.dev>',
         to: ownerEmail,
         subject: `Certifikát vlastnictví — ${object.title}`,
@@ -176,12 +181,14 @@ export async function POST(request: Request) {
 </html>`,
       });
 
-      console.log('Certificate email sent to:', ownerEmail);
+      console.log('=== EMAIL RESULT ===');
+      console.log('Email data:', JSON.stringify(emailData));
+      console.log('Email error:', JSON.stringify(emailError));
     } else {
-      console.log('RESEND_API_KEY not set, skipping email');
+      console.log('=== RESEND_API_KEY not set, skipping email ===');
     }
-  } catch (emailError) {
-    console.error('Email send failed (claim still successful):', emailError);
+  } catch (e) {
+    console.error('=== EMAIL EXCEPTION ===', e);
   }
 
   return Response.json({

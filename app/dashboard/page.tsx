@@ -166,7 +166,7 @@ export default function DashboardPage() {
               {ownedItems.map((item) => (
                 <Link
                   key={item.id}
-                  href={`/verify`}
+                  href={`/claim/${item.objects.qr_code}`}
                   className="group bg-graphite border border-[rgba(201,169,110,0.12)] rounded-sm p-6 transition-all duration-200 hover:-translate-y-1 hover:border-[rgba(201,169,110,0.4)]"
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -202,7 +202,7 @@ export default function DashboardPage() {
                       {item.objects.qr_code}
                     </p>
                     <span className="text-[8px] tracking-[2px] uppercase text-champagne opacity-0 group-hover:opacity-100 transition-opacity">
-                      Zobrazit &rarr;
+                      Zobrazit certifikát &rarr;
                     </span>
                   </div>
                 </Link>

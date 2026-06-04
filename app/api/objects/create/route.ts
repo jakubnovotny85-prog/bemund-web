@@ -11,6 +11,7 @@ interface CreateObjectBody {
   edition_number: number;
   edition_total: number;
   royalty_percent: number;
+  image_url: string | null;
 }
 
 export async function POST(request: Request) {
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
     edition_number,
     edition_total,
     royalty_percent,
+    image_url,
   } = body;
 
   if (!title) {
@@ -114,6 +116,7 @@ export async function POST(request: Request) {
       royalty_percent,
       qr_code,
       qr_url,
+      image_url: image_url || null,
       status: 'active',
     })
     .select()

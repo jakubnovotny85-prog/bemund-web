@@ -19,6 +19,7 @@ interface ClaimObject {
   edition_total: number;
   qr_code: string;
   status: string;
+  image_url: string | null;
   issuers: { name: string; email: string } | null;
 }
 
@@ -267,8 +268,12 @@ export default function ClaimPage() {
 
   // ─── Object info (shared between needs_auth and claim_form) ───
   const objectCard = (
-    <div className="bg-graphite border border-[rgba(201,169,110,0.2)] rounded-sm p-8 mb-6 relative overflow-hidden">
+    <div className="bg-graphite border border-[rgba(201,169,110,0.2)] rounded-sm mb-6 relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-champagne via-champagne-light to-transparent" />
+      {object.image_url && (
+        <img src={object.image_url} alt={object.title} className="w-full max-h-[200px] object-cover" />
+      )}
+      <div className="p-8">
       <div className="flex items-center gap-2 mb-6">
         <LogoSymbol size={18} />
         <span className="text-[7px] tracking-[3px] uppercase text-champagne font-medium">
@@ -289,6 +294,7 @@ export default function ClaimPage() {
       <p className="text-[11px] text-[rgba(245,242,236,0.35)]">
         Kus č. {object.edition_number} z {object.edition_total}
       </p>
+      </div>
     </div>
   );
 

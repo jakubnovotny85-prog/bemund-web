@@ -92,7 +92,9 @@ export async function POST(request: Request) {
     .eq('id', object.id)
     .single();
 
-  const authorName = objectDetails?.issuers?.name ?? objectDetails?.issuers?.email ?? 'Be Mund';
+  const authorName = objectDetails?.issuers?.name && objectDetails.issuers.name !== objectDetails.issuers.email
+    ? objectDetails.issuers.name
+    : objectDetails?.issuers?.email ?? 'Be Mund';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.bemund.cz';
   const today = new Date().toLocaleDateString('cs-CZ', {
     day: 'numeric',

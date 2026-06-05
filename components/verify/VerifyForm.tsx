@@ -77,7 +77,9 @@ export function VerifyForm() {
     setSearched(false);
   }
 
-  const authorName = object?.issuers?.name ?? object?.issuers?.email ?? 'Neznámý autor';
+  const authorName = object?.issuers?.name && object.issuers.name !== object.issuers.email
+    ? object.issuers.name
+    : object?.issuers?.email ?? 'Neznámý autor';
 
   const dateFormatter = new Intl.DateTimeFormat('cs-CZ', {
     day: 'numeric',

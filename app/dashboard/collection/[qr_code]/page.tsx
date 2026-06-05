@@ -109,7 +109,9 @@ export default function CollectionDetailPage() {
 
   if (!object) return null;
 
-  const authorName = object.issuers?.name ?? object.issuers?.email ?? 'Neznámý autor';
+  const authorName = object.issuers?.name && object.issuers.name !== object.issuers.email
+    ? object.issuers.name
+    : object.issuers?.email ?? 'Neznámý autor';
   const dateFormatter = new Intl.DateTimeFormat('cs-CZ', {
     day: 'numeric',
     month: 'long',

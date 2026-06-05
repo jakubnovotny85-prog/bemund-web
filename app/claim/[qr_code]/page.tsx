@@ -123,7 +123,9 @@ export default function ClaimPage() {
   const inputClass =
     'w-full bg-graphite-2 border border-[rgba(201,169,110,0.2)] rounded-sm px-4 py-3 text-sm font-body font-light text-ivory outline-none transition-colors focus:border-[rgba(201,169,110,0.6)] placeholder:text-[rgba(245,242,236,0.25)]';
 
-  const authorName = object?.issuers?.name ?? 'Neznámý autor';
+  const authorName = object?.issuers?.name && object.issuers.name !== object.issuers.email
+    ? object.issuers.name
+    : 'Neznámý autor';
   const today = new Date().toLocaleDateString('cs-CZ', {
     day: 'numeric',
     month: 'long',

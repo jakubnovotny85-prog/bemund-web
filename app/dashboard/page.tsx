@@ -186,7 +186,9 @@ export default function DashboardPage() {
                   </h3>
 
                   <p className="text-[11px] text-champagne italic mb-2 font-display">
-                    {item.objects.issuers?.name ?? item.objects.issuers?.email ?? 'Neznámý autor'}
+                    {item.objects.issuers?.name && item.objects.issuers.name !== item.objects.issuers.email
+                      ? item.objects.issuers.name
+                      : item.objects.issuers?.email ?? 'Neznámý autor'}
                   </p>
 
                   <p className="text-[11px] text-[rgba(245,242,236,0.35)] mb-1">

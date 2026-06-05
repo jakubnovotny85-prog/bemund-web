@@ -53,13 +53,16 @@ export async function POST(request: Request) {
   let issuerId = existingIssuer?.id;
 
   if (!issuerId) {
+    // Use name from user_metadata (set during registration), fallback to email
+    const userName = (user.user_metadata?.name as string) || userEmail;
+
     const { data: newIssuer, error: issuerError } = await supabase
       .from('issuers')
       .insert({
         user_id: userId,
-        name: userEmail,
+        name: userName,
         email: userEmail,
-        type: 'artist',
+        type: (user.user_metadata?.type as string) || 'artist',
       })
       .select('id')
       .single();

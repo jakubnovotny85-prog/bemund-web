@@ -47,8 +47,8 @@ function RegisterForm() {
         options: {
           data: { name, type },
           emailRedirectTo: redirectTo
-            ? `${window.location.origin}${redirectTo}`
-            : `${window.location.origin}/dashboard`,
+            ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
+            : `${window.location.origin}/auth/callback`,
         },
       });
 

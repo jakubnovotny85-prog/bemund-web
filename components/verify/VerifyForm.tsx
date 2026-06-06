@@ -168,11 +168,11 @@ export function VerifyForm() {
                     ['Aktuální majitel', ownership ? `${ownership.owner_name} (ověřeno)` : 'Zatím nepřevzato'],
                     ['Datum certifikátu', ownership ? dateFormatter.format(new Date(ownership.created_at)) : dateFormatter.format(new Date(object.created_at))],
                     ['ID', object.qr_code],
-                    ['Blockchain', '✓ Cardano mainnet'],
+                    ['Stav', 'Ověřeno Be Mund · čeká na zápis do blockchainu'],
                   ].map(([label, value]) => (
                     <div key={label} className="flex justify-between py-2.5 border-t border-[rgba(201,169,110,0.15)]">
                       <span className="text-[8px] tracking-[2px] uppercase text-[rgba(245,242,236,0.3)]">{label}</span>
-                      <span className={`text-[10px] tracking-[1px] ${label === 'Blockchain' ? 'text-success' : 'text-[rgba(245,242,236,0.6)]'}`}>
+                      <span className={`text-[10px] tracking-[1px] ${label === 'Stav' ? 'text-success' : 'text-[rgba(245,242,236,0.6)]'}`}>
                         {value}
                       </span>
                     </div>
@@ -182,7 +182,7 @@ export function VerifyForm() {
                 <div className="mt-5 inline-flex items-center gap-2.5 px-4 py-2.5 bg-[rgba(122,184,154,0.1)] border border-[rgba(122,184,154,0.3)] rounded-sm">
                   <div className="w-2.5 h-2.5 rounded-full bg-success" />
                   <span className="text-[10px] tracking-[1.5px] text-success font-medium uppercase">
-                    Originál ověřen
+                    Ověřeno Be Mund
                   </span>
                 </div>
               </motion.div>

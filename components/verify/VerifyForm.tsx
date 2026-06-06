@@ -136,7 +136,7 @@ export function VerifyForm() {
             <div className="flex flex-col items-center justify-center gap-5 py-16 px-10 text-center bg-graphite border border-[rgba(201,169,110,0.15)] rounded-sm min-h-[320px]">
               <div className="w-8 h-8 border-2 border-champagne border-t-transparent rounded-full animate-spin" />
               <p className="text-[11px] tracking-[2px] uppercase text-[rgba(245,242,236,0.4)]">
-                Ověřuji na blockchainu...
+                Ověřuji certifikát...
               </p>
             </div>
           )}

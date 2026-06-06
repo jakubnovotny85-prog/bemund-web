@@ -175,7 +175,7 @@ export async function POST(request: Request) {
 
 <div style="border-top:1px solid rgba(201,169,110,0.15);padding-top:24px;text-align:center;">
 <p style="color:rgba(244,241,235,0.3);font-size:10px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif;margin:0 0 8px;">BE MUND · BEMUND.CZ</p>
-<p style="color:rgba(244,241,235,0.2);font-size:9px;font-family:Arial,sans-serif;margin:0;">Tento certifikát je zapsán na Cardano blockchainu.</p>
+<p style="color:rgba(244,241,235,0.2);font-size:9px;font-family:Arial,sans-serif;margin:0;">Tento certifikát je ověřen v registru Be Mund. Zápis do blockchainu (Cardano) proběhne v připravované fázi.</p>
 </div>
 
 </div>

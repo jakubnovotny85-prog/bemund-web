@@ -4,28 +4,22 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { LogoSymbol } from '@/components/ui/Logo';
-import { supabase } from '@/lib/supabase';
 
 interface VerifyObject {
-  id: string;
   title: string;
-  description: string | null;
   category: string;
   year: number;
   medium: string | null;
-  dimensions: string | null;
   edition_number: number;
   edition_total: number;
   qr_code: string;
-  status: string;
   created_at: string;
-  issuers: { name: string; email: string } | null;
+  status: string;
+  issuer_name: string | null;
 }
 
 interface VerifyOwnership {
   owner_name: string;
-  owner_email: string;
-  is_current: boolean;
   created_at: string;
 }
 
@@ -45,25 +39,16 @@ export function VerifyForm() {
     setObject(null);
     setOwnership(null);
 
-    // Lookup object by qr_code
-    const { data: obj } = await supabase
-      .from('objects')
-      .select('*, issuers(name, email)')
-      .eq('qr_code', objectId.trim().toUpperCase())
-      .single();
+    try {
+      const res = await fetch(`/api/verify?qr_code=${encodeURIComponent(objectId.trim())}`);
 
-    if (obj) {
-      setObject(obj);
-
-      // Lookup current ownership
-      const { data: own } = await supabase
-        .from('ownerships')
-        .select('*')
-        .eq('object_id', obj.id)
-        .eq('is_current', true)
-        .single();
-
-      if (own) setOwnership(own);
+      if (res.ok) {
+        const data = await res.json();
+        setObject(data.object);
+        if (data.ownership) setOwnership(data.ownership);
+      }
+    } catch (err) {
+      console.error('Verify fetch error:', err);
     }
 
     setSearched(true);
@@ -77,9 +62,7 @@ export function VerifyForm() {
     setSearched(false);
   }
 
-  const authorName = object?.issuers?.name && object.issuers.name !== object.issuers.email
-    ? object.issuers.name
-    : object?.issuers?.email ?? 'Neznámý autor';
+  const authorName = object?.issuer_name ?? 'Neznámý autor';
 
   const dateFormatter = new Intl.DateTimeFormat('cs-CZ', {
     day: 'numeric',

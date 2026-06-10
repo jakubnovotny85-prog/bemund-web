@@ -2,29 +2,24 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { LogoSymbol } from '@/components/ui/Logo';
 
-interface GalleryObject {
-  id: string;
-  title: string;
-  image_url: string | null;
-  edition_number: number;
-  edition_total: number;
-  year: number;
-  category: string;
-  medium: string | null;
-  qr_code: string;
-  author: string | null;
-  is_available: boolean;
-}
-
-const categoryLabels: Record<string, string> = {
-  art: 'Umění',
-  sports: 'Sport',
-  collectible: 'Sběratelství',
-  luxury: 'Luxus',
-  other: 'Ostatní',
-};
+const CATEGORIES = [
+  {
+    slug: 'painting',
+    label: 'Obrazy',
+    description: 'Originální umělecká díla s doloženým původem.',
+  },
+  {
+    slug: 'card',
+    label: 'Sběratelské karty',
+    description: 'Limitované edice s ověřitelným pořadovým číslem.',
+  },
+  {
+    slug: 'jewelry',
+    label: 'Klenoty',
+    description: 'Šperky a luxusní předměty s certifikátem pravosti.',
+  },
+] as const;
 
 export const metadata = {
   title: 'Galerie — Be Mund',
@@ -37,12 +32,15 @@ export default async function GaleryPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const { data: objects } = await supabase
-    .from('gallery_objects')
-    .select('*')
-    .order('year', { ascending: false });
-
-  const items: GalleryObject[] = objects ?? [];
+  // Count available items per category
+  const counts: Record<string, number> = {};
+  for (const cat of CATEGORIES) {
+    const { count } = await supabase
+      .from('gallery_objects')
+      .select('id', { count: 'exact', head: true })
+      .eq('category', cat.slug);
+    counts[cat.slug] = count ?? 0;
+  }
 
   return (
     <>
@@ -50,116 +48,85 @@ export default async function GaleryPage() {
       <main className="min-h-screen bg-obsidian">
         <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pt-32 pb-16 lg:pb-24">
           {/* Header */}
-          <div className="mb-12">
+          <div className="mb-14">
             <p className="text-xs tracking-[4px] uppercase text-champagne font-medium mb-3">
               Be Mund
             </p>
-            <h1 className="font-display text-4xl lg:text-5xl font-light tracking-tight mb-4">
+            <h1 className="font-display text-4xl lg:text-5xl font-light tracking-tight mb-6">
               Galerie
             </h1>
-            <p className="text-sm leading-relaxed text-[rgba(245,242,236,0.5)] max-w-lg">
-              Díla s ověřitelným digitálním certifikátem vlastnictví.
+            <p className="text-sm leading-[1.9] text-[rgba(245,242,236,0.5)] max-w-2xl">
+              Galerie Be Mund je místo, kde se sběratelská a umělecká díla vystavují
+              i nabízejí k pořízení. Ke každému objektu patří digitální certifikát
+              vlastnictví&nbsp;— ověřitelný důkaz jeho původu, pravosti a majitele,
+              trvale zapsaný na blockchainu. Vyberte si z kategorií níže a staňte se
+              doloženým vlastníkem.
             </p>
           </div>
 
-          {/* Grid */}
-          {items.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {items.map((obj) => (
+          {/* Category tiles */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {CATEGORIES.map((cat) => {
+              const count = counts[cat.slug];
+              const hasItems = count > 0;
+              const href = hasItems ? `/galery/${cat.slug}` : '/#waitlist';
+
+              return (
                 <Link
-                  key={obj.id}
-                  href={`/galery/${obj.qr_code}`}
-                  className="group bg-graphite border border-[rgba(201,169,110,0.12)] rounded-sm overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:border-[rgba(201,169,110,0.4)]"
+                  key={cat.slug}
+                  href={href}
+                  className={`group relative bg-graphite border rounded-sm p-8 transition-all duration-200 ${
+                    hasItems
+                      ? 'border-[rgba(201,169,110,0.2)] hover:-translate-y-1 hover:border-[rgba(201,169,110,0.5)]'
+                      : 'border-[rgba(201,169,110,0.08)] opacity-55'
+                  }`}
                 >
-                  {/* Image */}
-                  <div className="relative aspect-[4/3] bg-[rgba(201,169,110,0.04)] overflow-hidden">
-                    {obj.image_url ? (
-                      <img
-                        src={obj.image_url}
-                        alt={obj.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
+                  {/* Gold top accent */}
+                  <div className={`absolute top-0 left-0 right-0 h-[2px] transition-opacity ${
+                    hasItems
+                      ? 'bg-gradient-to-r from-champagne via-champagne-light to-transparent opacity-60 group-hover:opacity-100'
+                      : 'bg-gradient-to-r from-champagne to-transparent opacity-20'
+                  }`} />
+
+                  {/* Category label */}
+                  <p className="text-[8px] tracking-[3px] uppercase text-champagne font-medium mb-4">
+                    Kategorie
+                  </p>
+
+                  <h2 className={`font-display text-2xl font-light tracking-tight mb-2 transition-colors ${
+                    hasItems ? 'text-ivory group-hover:text-champagne-light' : 'text-[rgba(245,242,236,0.5)]'
+                  }`}>
+                    {cat.label}
+                  </h2>
+
+                  <p className="text-[11px] leading-[1.7] text-[rgba(245,242,236,0.4)] mb-6">
+                    {cat.description}
+                  </p>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between">
+                    {hasItems ? (
+                      <>
+                        <span className="text-[10px] text-[rgba(245,242,236,0.35)]">
+                          {count} {count === 1 ? 'dílo' : count < 5 ? 'díla' : 'děl'}
+                        </span>
+                        <span className="text-[9px] tracking-[2px] uppercase text-champagne opacity-0 group-hover:opacity-100 transition-opacity">
+                          Prohlédnout &rarr;
+                        </span>
+                      </>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <LogoSymbol size={40} className="opacity-10" />
-                      </div>
+                      <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-[rgba(201,169,110,0.06)] border border-[rgba(201,169,110,0.12)] rounded-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-champagne opacity-40" />
+                        <span className="text-[8px] tracking-[2px] uppercase text-[rgba(201,169,110,0.5)] font-medium">
+                          Připravujeme
+                        </span>
+                      </span>
                     )}
-
-                    {/* Availability badge */}
-                    <div className="absolute top-3 right-3">
-                      {obj.is_available ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[rgba(10,10,10,0.75)] backdrop-blur-sm border border-[rgba(122,184,154,0.3)] rounded-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                          <span className="text-[7px] tracking-[1.5px] uppercase text-success font-medium">
-                            K dispozici
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[rgba(10,10,10,0.75)] backdrop-blur-sm border border-[rgba(201,169,110,0.2)] rounded-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-champagne opacity-60" />
-                          <span className="text-[7px] tracking-[1.5px] uppercase text-[rgba(201,169,110,0.6)] font-medium">
-                            Vlastněno
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <div className="p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[8px] tracking-[2px] uppercase text-champagne font-medium">
-                        {categoryLabels[obj.category] ?? obj.category}
-                      </span>
-                      {obj.medium && (
-                        <span className="text-[8px] tracking-[1.5px] uppercase text-[rgba(245,242,236,0.25)]">
-                          {obj.medium}
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="font-display text-lg font-light tracking-tight text-ivory mb-1 group-hover:text-champagne-light transition-colors">
-                      {obj.title}
-                    </h3>
-
-                    <p className="text-[11px] text-[rgba(245,242,236,0.45)] mb-3">
-                      {obj.author ?? 'Neznámý autor'} &middot; {obj.year}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-[rgba(245,242,236,0.3)]">
-                        Edice {obj.edition_number} / {obj.edition_total}
-                      </span>
-
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[rgba(122,184,154,0.08)] rounded-sm">
-                        <span className="w-1 h-1 rounded-full bg-success" />
-                        <span className="text-[7px] tracking-[1px] uppercase text-success font-medium">
-                          Ověřeno &middot; Cardano
-                        </span>
-                      </span>
-                    </div>
                   </div>
                 </Link>
-              ))}
-            </div>
-          ) : (
-            /* Empty state */
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <LogoSymbol size={56} className="opacity-15 mb-8" />
-              <h2 className="font-display text-2xl font-light tracking-tight mb-3 text-ivory">
-                Galerie je zatím prázdná
-              </h2>
-              <p className="text-sm text-[rgba(245,242,236,0.4)] max-w-sm mb-8">
-                Připravujeme první díla s digitálním certifikátem. Zanechte nám email a dáme vám vědět.
-              </p>
-              <Link
-                href="/#waitlist"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-champagne text-obsidian font-semibold text-[9px] tracking-[2px] uppercase rounded-sm transition-colors hover:bg-champagne-light font-body"
-              >
-                Získat přístup
-              </Link>
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
       </main>
       <Footer />

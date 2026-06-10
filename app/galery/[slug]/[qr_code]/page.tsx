@@ -7,7 +7,9 @@ export const metadata = {
   title: 'Detail díla — Be Mund',
 };
 
-export default function GaleryDetailPage() {
+export default async function GaleryDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
   return (
     <>
       <Navbar />
@@ -21,10 +23,10 @@ export default function GaleryDetailPage() {
             Tato stránka je ve vývoji. Brzy zde najdete kompletní detail díla s certifikátem.
           </p>
           <Link
-            href="/galery"
+            href={`/galery/${slug}`}
             className="text-[10px] tracking-[2px] uppercase text-champagne hover:text-champagne-light transition-colors font-body"
           >
-            &larr; Zpět do galerie
+            &larr; Zpět do kategorie
           </Link>
         </div>
       </main>

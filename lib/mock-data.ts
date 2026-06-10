@@ -26,6 +26,7 @@ const mockObject: BeMundObject = {
   qr_url: 'https://www.bemund.cz/claim/BM-2024-007-A4K9',
   royalty_percent: 5.0,
   status: 'active',
+  in_gallery: false,
   issuer: mockIssuer,
 };
 

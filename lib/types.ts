@@ -30,6 +30,7 @@ export interface BeMundObject {
   qr_url: string;
   royalty_percent: number;
   status: ObjectStatus;
+  in_gallery: boolean;
   issuer?: Issuer;
 }
 

@@ -103,12 +103,12 @@ export default async function GaleryCategoryPage({ params }: { params: Promise<{
                   className="group bg-graphite border border-[rgba(201,169,110,0.12)] rounded-sm overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:border-[rgba(201,169,110,0.4)]"
                 >
                   {/* Image */}
-                  <div className="relative aspect-[4/3] bg-[rgba(201,169,110,0.04)] overflow-hidden">
+                  <div className="relative aspect-[4/3] bg-graphite overflow-hidden flex items-center justify-center">
                     {obj.image_url ? (
                       <img
                         src={obj.image_url}
                         alt={obj.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import QRCode from 'qrcode';
 import { supabase } from '@/lib/supabase';
 import { LogoSymbol } from '@/components/ui/Logo';
+import { GalleryToggle } from '@/components/dashboard/GalleryToggle';
 
 interface CertObject {
   id: string;
@@ -19,6 +20,7 @@ interface CertObject {
   edition_total: number;
   qr_code: string;
   image_url: string | null;
+  in_gallery: boolean;
   issuers: { name: string; email: string } | null;
 }
 
@@ -152,11 +154,11 @@ export default function CollectionDetailPage() {
 
         {/* Photo */}
         {object.image_url && (
-          <div className="mb-8">
+          <div className="mb-8 flex items-center justify-center max-h-[70vh] bg-graphite rounded-sm border border-[rgba(201,169,110,0.15)]">
             <img
               src={object.image_url}
               alt={object.title}
-              className="w-full max-h-[400px] object-cover rounded-sm border border-[rgba(201,169,110,0.15)]"
+              className="max-w-full max-h-[70vh] object-contain rounded-sm"
             />
           </div>
         )}
@@ -244,6 +246,11 @@ export default function CollectionDetailPage() {
           >
             Stáhnout QR &darr;
           </button>
+        </div>
+
+        {/* Gallery toggle */}
+        <div className="mb-6">
+          <GalleryToggle objectId={object.id} initialInGallery={object.in_gallery ?? false} />
         </div>
 
         {/* Actions */}

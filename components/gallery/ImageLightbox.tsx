@@ -31,12 +31,12 @@ export function ImageLightbox({ src, alt }: ImageLightboxProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="block w-full cursor-zoom-in group relative rounded-sm overflow-hidden border border-[rgba(201,169,110,0.12)] transition-all duration-200 hover:border-[rgba(201,169,110,0.4)]"
+        className="flex items-center justify-center w-full max-h-[70vh] bg-graphite cursor-zoom-in group relative rounded-sm overflow-hidden border border-[rgba(201,169,110,0.12)] transition-all duration-200 hover:border-[rgba(201,169,110,0.4)]"
       >
         <img
           src={src}
           alt={alt}
-          className="w-full aspect-[4/3] object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          className="max-w-full max-h-[70vh] object-contain transition-transform duration-300 group-hover:scale-[1.02]"
         />
         <div className="absolute inset-0 bg-[rgba(10,10,10,0)] group-hover:bg-[rgba(10,10,10,0.15)] transition-colors flex items-center justify-center">
           <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] tracking-[2px] uppercase text-ivory font-body bg-[rgba(10,10,10,0.6)] backdrop-blur-sm px-4 py-2 rounded-sm">

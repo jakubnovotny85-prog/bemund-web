@@ -6,6 +6,7 @@ import Link from 'next/link';
 import QRCode from 'qrcode';
 import { supabase } from '@/lib/supabase';
 import { LogoSymbol } from '@/components/ui/Logo';
+import { GalleryToggle } from '@/components/dashboard/GalleryToggle';
 import type { BeMundObject } from '@/lib/types';
 
 export default function ObjectDetailPage() {
@@ -103,11 +104,11 @@ export default function ObjectDetailPage() {
       <div className="max-w-3xl mx-auto px-6 md:px-12 py-12">
         {/* Object image */}
         {object.image_url && (
-          <div className="mb-8">
+          <div className="mb-8 flex items-center justify-center max-h-[70vh] bg-graphite rounded-sm border border-[rgba(201,169,110,0.15)]">
             <img
               src={object.image_url}
               alt={object.title}
-              className="w-full max-h-[300px] object-cover rounded-sm border border-[rgba(201,169,110,0.15)]"
+              className="max-w-full max-h-[70vh] object-contain rounded-sm"
             />
           </div>
         )}
@@ -210,6 +211,11 @@ export default function ObjectDetailPage() {
               Kupující naskenuje a stane se ověřeným majitelem.
             </p>
           </div>
+        </div>
+
+        {/* Gallery toggle */}
+        <div className="mt-8">
+          <GalleryToggle objectId={object.id} initialInGallery={object.in_gallery ?? false} />
         </div>
 
         {/* Back to dashboard */}

@@ -17,31 +17,39 @@ export function GalleryToggle({ objectId, initialInGallery }: GalleryToggleProps
     setLoading(true);
     setError('');
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      setError('Nejste přihlášeni');
-      setLoading(false);
-      return;
-    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('Nejste přihlášeni');
+        setLoading(false);
+        return;
+      }
 
-    const res = await fetch(`/api/objects/${objectId}/gallery`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ in_gallery: !inGallery }),
-    });
+      const newValue = !inGallery;
 
-    if (!res.ok) {
+      const res = await fetch(`/api/objects/${objectId}/gallery`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ in_gallery: newValue }),
+      });
+
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? 'Nepodařilo se změnit viditelnost');
-      setLoading(false);
-      return;
-    }
 
-    setInGallery(!inGallery);
-    setLoading(false);
+      if (!res.ok) {
+        setError(data.error ?? `Chyba ${res.status}: nepodařilo se změnit viditelnost`);
+        setLoading(false);
+        return;
+      }
+
+      setInGallery(data.in_gallery ?? newValue);
+    } catch (err) {
+      setError(`Síťová chyba: ${err instanceof Error ? err.message : 'nepodařilo se spojit se serverem'}`);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -79,7 +87,9 @@ export function GalleryToggle({ objectId, initialInGallery }: GalleryToggleProps
       </div>
 
       {error && (
-        <p className="mt-2 text-[11px] text-red-400">{error}</p>
+        <p className="mt-3 text-[12px] text-red-400 bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-sm px-3 py-2">
+          {error}
+        </p>
       )}
     </div>
   );

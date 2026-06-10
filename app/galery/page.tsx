@@ -21,6 +21,8 @@ const CATEGORIES = [
   },
 ] as const;
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Galerie — Be Mund',
   description: 'Díla s ověřitelným digitálním certifikátem vlastnictví.',

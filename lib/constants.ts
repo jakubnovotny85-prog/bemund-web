@@ -19,6 +19,7 @@ export const COLORS = {
 
 export const NAV_LINKS = [
   { label: 'Jak to funguje', href: '#how-it-works' },
+  { label: 'Galerie', href: '/galery' },
   { label: 'Pro koho', href: '#use-cases' },
   { label: 'Ověřit objekt', href: '/verify' },
 ] as const;

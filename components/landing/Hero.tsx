@@ -94,14 +94,14 @@ export function Hero() {
 
             <FadeIn delay={0.3}>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="#waitlist">
+                <Link href="/galery">
                   <Button variant="primary" className="w-full sm:w-auto px-7">
-                    Získat přístup zdarma
+                    Prohlédnout galerii &rarr;
                   </Button>
                 </Link>
                 <Link href="/verify">
                   <Button variant="outline" className="w-full sm:w-auto">
-                    Ověřit objekt &rarr;
+                    Ověřit objekt
                   </Button>
                 </Link>
               </div>
